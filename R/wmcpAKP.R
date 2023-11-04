@@ -21,10 +21,6 @@ wmcpAKP <- function(x, tr = 0.2, nboot = 200, ...) {
 
   res <- c("Effect.Size" = mean(A[, 3]), "ci.low" = mean(A[, 4]), "ci.up" = mean(A[, 5]))
 
-  class(res) = c("numeric", "wmcpAKP")
+  class(res) <- c("numeric", "wmcpAKP")
   res
 }
-
-
-
-

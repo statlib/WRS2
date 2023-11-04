@@ -1,4 +1,4 @@
-mcp2a <- function(formula, data, est = "mom", nboot = 599, ...){
+mcp2a <- function(formula, data, est = "mom", nboot = 599, ...) {
   #
   if (missing(data)) {
     mf <- model.frame(formula)
@@ -8,126 +8,133 @@ mcp2a <- function(formula, data, est = "mom", nboot = 599, ...){
   cl <- match.call()
   est <- match.arg(est, c("mom", "onestep", "median"), several.ok = FALSE)
 
-  J <- nlevels(mf[,2])
-  K <- nlevels(mf[,3])
+  J <- nlevels(mf[, 2])
+  K <- nlevels(mf[, 3])
 
-  grp=NA
-  con=0
-  alpha=.05
+  grp <- NA
+  con <- 0
+  alpha <- .05
 
   JK <- J * K
 
   est <- get(est)
 
-  nfac <- tapply(mf[,1], list(mf[,2],mf[,3]), length, simplify = FALSE)
-  nfac1 <- nfac[unique(mf[,2]), unique(mf[,3])]    ## reordering factor levels
+  nfac <- tapply(mf[, 1], list(mf[, 2], mf[, 3]), length, simplify = FALSE)
+  nfac1 <- nfac[unique(mf[, 2]), unique(mf[, 3])] ## reordering factor levels
 
   data <- na.omit(data[variable.names(mf)])
-  data <- data[order(mf[,2], mf[,3]),]
+  data <- data[order(mf[, 2], mf[, 3]), ]
   data$row <- unlist(alply(nfac1, 1, sequence), use.names = FALSE)
-  dataMelt <- melt(data, id = c("row", colnames(mf)[2], colnames(mf)[3]), measured = mf[,1])
+  dataMelt <- melt(data, id = c("row", colnames(mf)[2], colnames(mf)[3]), measured = mf[, 1])
 
   dataWide <- cast(dataMelt, as.formula(paste(colnames(dataMelt)[1], "~", colnames(mf)[2], "+", colnames(mf)[3])),
-                   fun.aggregate = mean)
+    fun.aggregate = mean
+  )
   dataWide$row <- NULL
   # x <- dataWide
   # x <- listm(x)
 
-  x <- fac2list(mf[,1], mf[,2:3])
+  x <- fac2list(mf[, 1], mf[, 2:3])
 
-  if(!is.na(grp)) {
+  if (!is.na(grp)) {
     yy <- x
-    for(j in 1:length(grp))
+    for (j in 1:length(grp)) {
       x[[j]] <- yy[[grp[j]]]
+    }
   }
-  mvec<-NA
-  tempn=0
-  for(j in 1:JK) {
+  mvec <- NA
+  tempn <- 0
+  for (j in 1:JK) {
     xx <- x[[j]]
     x[[j]] <- xx[!is.na(xx)]
-    mvec[j]<-est(x[[j]])
-    tempn[j]=length(x[[j]])
+    mvec[j] <- est(x[[j]])
+    tempn[j] <- length(x[[j]])
   }
-  nmax=max(tempn)
+  nmax <- max(tempn)
   #
   # Create the three contrast matrices
   #
   #             results can be duplicated.
   #  Determine nboot if a value was not specified
 
-  bvec<-matrix(NA,nrow=JK,ncol=nboot)
-  #print("Taking bootstrap samples. Please wait.")
-  for(j in 1:JK){
-    #print(paste("Working on group ",j))
-    data<-matrix(sample(x[[j]],size=length(x[[j]])*nboot,replace=TRUE),nrow=nboot)
-    bvec[j,]<-apply(data,1,est) # J by nboot matrix, jth row contains
+  bvec <- matrix(NA, nrow = JK, ncol = nboot)
+  # print("Taking bootstrap samples. Please wait.")
+  for (j in 1:JK) {
+    # print(paste("Working on group ",j))
+    data <- matrix(sample(x[[j]], size = length(x[[j]]) * nboot, replace = TRUE), nrow = nboot)
+    bvec[j, ] <- apply(data, 1, est) # J by nboot matrix, jth row contains
     #                          bootstrapped  estimates for jth group
   }
-  outvec<-list()
-  temp3<-con2way(J,K)
-  for(jj in 1:3){
-    con<-temp3[[jj]]
-    con<-as.matrix(con)
-    ncon<-ncol(con)
+  outvec <- list()
+  temp3 <- con2way(J, K)
+  for (jj in 1:3) {
+    con <- temp3[[jj]]
+    con <- as.matrix(con)
+    ncon <- ncol(con)
     # Determine critical values
-    if(alpha==.05){
-      dvec<-c(.025,.025,.0169,.0127,.0102,.00851,.0073,.00639,.00568,.00511)
-      if(ncon > 10){
-        avec<-.05/c(11:ncon)
-        dvec<-c(dvec,avec)
-      }}
-    if(alpha==.01){
-      dvec<-c(.005,.005,.00334,.00251,.00201,.00167,.00143,.00126,.00112,.00101)
-      if(ncon > 10){
-        avec<-.01/c(11:ncon)
-        dvec<-c(dvec,avec)
-      }}
-    if(nmax>80){
-      if(alpha==.05){
-        dvec<-c(.05,.025,.0169,.0127,.0102,.00851,.0073,.00639,.00568,.00511)
-        if(ncon > 10){
-          avec<-.05/c(11:ncon)
-          dvec<-c(dvec,avec)
-        }}
-      if(alpha==.01){
-        dvec<-c(.01,.005,.00334,.00251,.00201,.00167,.00143,.00126,.00112,.00101)
-        if(ncon > 10){
-          avec<-.01/c(11:ncon)
-          dvec<-c(dvec,avec)
-        }}
-      if(alpha != .05 && alpha != .01){
-        dvec<-alpha/c(1:ncon)
-      }}
-    if(alpha != .05 && alpha != .01)dvec<-alpha/c(1:ncon)
-    test<-NA
-    bcon<-t(con)%*%bvec #ncon by nboot matrix
-    tvec<-t(con)%*%mvec
-    for (d in 1:ncon){
-      test[d]<-sum(bcon[d,]>0)/nboot
-      if(test[d]> .5)test[d]<-1-test[d]
+    if (alpha == .05) {
+      dvec <- c(.025, .025, .0169, .0127, .0102, .00851, .0073, .00639, .00568, .00511)
+      if (ncon > 10) {
+        avec <- .05 / c(11:ncon)
+        dvec <- c(dvec, avec)
+      }
     }
-    output<-matrix(0,ncon,6)
-    dimnames(output)<-list(NULL,c("con.num","psihat","sig.test","sig.crit","ci.lower","ci.upper"))
-    temp2<-order(0-test)
-    zvec<-dvec[1:ncon]
-    sigvec<-(test[temp2]>=zvec)
-    if(sum(sigvec)<ncon){
-      dd<-ncon-sum(sigvec) #number that are sig.
-      ddd<-sum(sigvec)+1
-      zvec[ddd:ncon]<-dvec[ddd]
+    if (alpha == .01) {
+      dvec <- c(.005, .005, .00334, .00251, .00201, .00167, .00143, .00126, .00112, .00101)
+      if (ncon > 10) {
+        avec <- .01 / c(11:ncon)
+        dvec <- c(dvec, avec)
+      }
     }
-    output[temp2,4]<-zvec
-    icl<-round(dvec[ncon]*nboot)+1
-    icu<-nboot-icl-1
-    for (ic in 1:ncol(con)){
-      output[ic,2]<-tvec[ic,]
-      output[ic,1]<-ic
-      output[ic,3]<-test[ic]
-      temp<-sort(bcon[ic,])
-      output[ic,5]<-temp[icl]
-      output[ic,6]<-temp[icu]
+    if (nmax > 80) {
+      if (alpha == .05) {
+        dvec <- c(.05, .025, .0169, .0127, .0102, .00851, .0073, .00639, .00568, .00511)
+        if (ncon > 10) {
+          avec <- .05 / c(11:ncon)
+          dvec <- c(dvec, avec)
+        }
+      }
+      if (alpha == .01) {
+        dvec <- c(.01, .005, .00334, .00251, .00201, .00167, .00143, .00126, .00112, .00101)
+        if (ncon > 10) {
+          avec <- .01 / c(11:ncon)
+          dvec <- c(dvec, avec)
+        }
+      }
+      if (alpha != .05 && alpha != .01) {
+        dvec <- alpha / c(1:ncon)
+      }
     }
-    outvec[[jj]]<-output
+    if (alpha != .05 && alpha != .01) dvec <- alpha / c(1:ncon)
+    test <- NA
+    bcon <- t(con) %*% bvec # ncon by nboot matrix
+    tvec <- t(con) %*% mvec
+    for (d in 1:ncon) {
+      test[d] <- sum(bcon[d, ] > 0) / nboot
+      if (test[d] > .5) test[d] <- 1 - test[d]
+    }
+    output <- matrix(0, ncon, 6)
+    dimnames(output) <- list(NULL, c("con.num", "psihat", "sig.test", "sig.crit", "ci.lower", "ci.upper"))
+    temp2 <- order(0 - test)
+    zvec <- dvec[1:ncon]
+    sigvec <- (test[temp2] >= zvec)
+    if (sum(sigvec) < ncon) {
+      dd <- ncon - sum(sigvec) # number that are sig.
+      ddd <- sum(sigvec) + 1
+      zvec[ddd:ncon] <- dvec[ddd]
+    }
+    output[temp2, 4] <- zvec
+    icl <- round(dvec[ncon] * nboot) + 1
+    icu <- nboot - icl - 1
+    for (ic in 1:ncol(con)) {
+      output[ic, 2] <- tvec[ic, ]
+      output[ic, 1] <- ic
+      output[ic, 3] <- test[ic]
+      temp <- sort(bcon[ic, ])
+      output[ic, 5] <- temp[icl]
+      output[ic, 6] <- temp[icu]
+    }
+    outvec[[jj]] <- output
   }
 
   cnamesA <- colnames(mf)[2]

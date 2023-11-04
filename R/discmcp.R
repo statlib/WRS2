@@ -1,4 +1,4 @@
-discmcp <- function(formula, data, alpha = 0.05, nboot = 500, ...){
+discmcp <- function(formula, data, alpha = 0.05, nboot = 500, ...) {
   #
   #   Multiple comparisons for  J independent groups
   #   having discrete distributions.
@@ -23,33 +23,35 @@ discmcp <- function(formula, data, alpha = 0.05, nboot = 500, ...){
   }
   cl <- match.call()
 
-  x <- split(model.extract(mf, "response"), mf[,2])
+  x <- split(model.extract(mf, "response"), mf[, 2])
 
-  J<-length(x)
-  ncon=(J^2-J)/2
-  Jm<-J-1
+  J <- length(x)
+  ncon <- (J^2 - J) / 2
+  Jm <- J - 1
   #
   # Determine critical values
-  dvec=alpha/c(1:ncon)
+  dvec <- alpha / c(1:ncon)
 
-  output<-as.data.frame(matrix(NA,nrow=ncon,ncol=4))
-  colnames(output)<-c('Group 1','Group 2','p.value','p.crit')
-  ic=0
-  for(j in 1:J){
-    for(k in 1:J){
-      if(j<k){
-        ic=ic+1
-        #output[ic,1]=j
-        output[ic,1] <- levels(mf[,2])[j]
-        #output[ic,2]=k
-        output[ic,2] <- levels(mf[,2])[k]
-        output[ic,3]=disc2com(x[[j]],x[[k]],simulate.p.value = TRUE, B=nboot)$p.value
-      }}}
-  temp2<-order(0-output[,3])
-  zvec<-dvec[1:ncon]
-  #sigvec<-(test[temp2]>=zvec)
-  output[temp2,4]<-zvec
-  num.sig<-sum(output[,3]<=output[,4])
+  output <- as.data.frame(matrix(NA, nrow = ncon, ncol = 4))
+  colnames(output) <- c("Group 1", "Group 2", "p.value", "p.crit")
+  ic <- 0
+  for (j in 1:J) {
+    for (k in 1:J) {
+      if (j < k) {
+        ic <- ic + 1
+        # output[ic,1]=j
+        output[ic, 1] <- levels(mf[, 2])[j]
+        # output[ic,2]=k
+        output[ic, 2] <- levels(mf[, 2])[k]
+        output[ic, 3] <- disc2com(x[[j]], x[[k]], simulate.p.value = TRUE, B = nboot)$p.value
+      }
+    }
+  }
+  temp2 <- order(0 - output[, 3])
+  zvec <- dvec[1:ncon]
+  # sigvec<-(test[temp2]>=zvec)
+  output[temp2, 4] <- zvec
+  num.sig <- sum(output[, 3] <= output[, 4])
 
   outtable <- output
   result <- list(partable = outtable, alpha = alpha, call = cl)

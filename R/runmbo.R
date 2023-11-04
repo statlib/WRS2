@@ -1,5 +1,4 @@
-runmbo <- function(x, y, fr = 1, est = "mom", nboot = 40, ...){
-
+runmbo <- function(x, y, fr = 1, est = "mom", nboot = 40, ...) {
   #
   # running interval smooth with bagging
   #
@@ -21,29 +20,29 @@ runmbo <- function(x, y, fr = 1, est = "mom", nboot = 40, ...){
   #
   est <- match.arg(est, c("mom", "onestep", "median"), several.ok = FALSE)
   est <- get(est)
-  temp <- cbind(x,y)
+  temp <- cbind(x, y)
   temp <- elimna(temp) # Eliminate any rows with missing values
-  #if(eout && xout)stop("Not allowed to have eout=xout=T")
-  #if(eout){
+  # if(eout && xout)stop("Not allowed to have eout=xout=T")
+  # if(eout){
   #  flag<-outfun(temp,plotit=FALSE)$keep
   #  temp<-temp[flag,]
-  #}
-  #if(xout){
+  # }
+  # if(xout){
   #  flag<-outfun(x,plotit=FALSE)$keep
   #  temp<-temp[flag,]
-  #}
-  x <- temp[,1]
-  y <- temp[,2]
+  # }
+  x <- temp[, 1]
+  y <- temp[, 2]
   pts <- x
   pts <- as.matrix(pts)
-  mat <- matrix(NA,nrow=nboot,ncol=nrow(pts))
+  mat <- matrix(NA, nrow = nboot, ncol = nrow(pts))
   vals <- NA
-  for(it in 1:nboot){
+  for (it in 1:nboot) {
     idat <- sample(c(1:length(y)), replace = TRUE)
-    xx <- temp[idat,1]
-    yy <- temp[idat,2]
-    mat[it,] <- runhat(xx,yy,pts=pts,est=est,fr=fr)
+    xx <- temp[idat, 1]
+    yy <- temp[idat, 2]
+    mat[it, ] <- runhat(xx, yy, pts = pts, est = est, fr = fr)
   }
-  rmd <- apply(mat,2,mean,na.rm=TRUE)
+  rmd <- apply(mat, 2, mean, na.rm = TRUE)
   return(rmd)
 }

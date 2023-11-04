@@ -1,3 +1,3 @@
-dnormvar<-function(x){
-x^2*dnorm(x)
+dnormvar <- function(x) {
+  x^2 * dnorm(x)
 }
